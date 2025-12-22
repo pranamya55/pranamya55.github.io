@@ -2,51 +2,40 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>WalletConnect Base Tx (No Install)</title>
+  <title>WalletConnect Base Tx</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 </head>
 <body>
   <button id="connectBtn">Connect & Send Tx on Base</button>
 
   <script type="module">
-    import EthereumProvider from "https://unpkg.com/@walletconnect/ethereum-provider@2.11.1/dist/index.js";
-    import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@6.10.0/dist/ethers.min.js";
+    import EthereumProvider from "https://esm.sh/@walletconnect/ethereum-provider@2.11.1";
+    import { ethers } from "https://esm.sh/ethers@6.10.0";
 
     const BASE_CHAIN_ID = 8453;
 
-    const connectBtn = document.getElementById("connectBtn");
-
-    connectBtn.onclick = async () => {
-      // 1. Init WalletConnect provider
+    document.getElementById("connectBtn").onclick = async () => {
       const provider = await EthereumProvider.init({
-        projectId: "77ea2d08d606710c846a4deec8579b65", // REQUIRED
+        projectId: "YOUR_WALLETCONNECT_PROJECT_ID",
         chains: [BASE_CHAIN_ID],
         showQrModal: true,
         methods: ["eth_sendTransaction"],
         events: ["accountsChanged", "chainChanged"],
       });
 
-      // 2. Open wallet (QR / deep link)
       await provider.enable();
 
-      // 3. Wrap with ethers
       const ethersProvider = new ethers.BrowserProvider(provider);
       const signer = await ethersProvider.getSigner();
-      const from = await signer.getAddress();
 
-      // 4. Simple Base transaction
       const tx = {
-        from,
         to: "0x000000000000000000000000000000000000dEaD",
         value: ethers.parseEther("0.00001"),
         chainId: BASE_CHAIN_ID,
       };
 
-      console.log("Prompting tx:", tx);
-
-      // 5. Prompt wallet
-      const sentTx = await signer.sendTransaction(tx);
-      console.log("Tx hash:", sentTx.hash);
+      const sent = await signer.sendTransaction(tx);
+      console.log("Tx hash:", sent.hash);
     };
   </script>
 </body>
