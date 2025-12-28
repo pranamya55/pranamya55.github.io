@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Sepolia ERC20 Approve PoC (No External JS)</title>
+    <title>Base ERC20 Approve PoC (No External JS)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
       body {
@@ -18,7 +18,7 @@
     </style>
   </head>
   <body>
-    <h2>Sepolia ERC20 Approve PoC (No External JS)</h2>
+    <h2>Base ERC20 Approve PoC (No External JS)</h2>
 
     <label>Token (ERC20) Address</label>
     <input id="token" placeholder="0x..." />
@@ -31,7 +31,7 @@
 
     <button id="connect">Connect Wallet</button>
     <button id="permissions">Request Permissions</button>
-    <button id="switch">Switch to Sepolia</button>
+    <button id="switch">Switch to Base</button>
     <button id="approve">Approve</button>
 
     <pre id="log"></pre>
@@ -67,30 +67,30 @@
         return Promise.race([p.finally(() => clearTimeout(t)), timeout]);
       };
 
-      const switchToSepolia = async (prov) => {
-        log("Switching to Sepolia...");
+      const switchToBase = async (prov) => {
+        log("Switching to Base...");
         await prov.request({
           method: "wallet_switchEthereumChain",
-          params: [{ chainId: "0xaa36a7" }],
+          params: [{ chainId: "0x2105" }],
         }).catch(async (err) => {
-          if (err.code === 4902) {
-            log("Sepolia not added. Adding chain...");
+          if (err.code === 4902 || /Unrecognized chain ID/i.test(err?.message || "")) {
+            log("Base not added. Adding chain...");
             await prov.request({
               method: "wallet_addEthereumChain",
               params: [{
-                chainId: "0xaa36a7",
-                chainName: "Sepolia",
-                nativeCurrency: { name: "SepoliaETH", symbol: "ETH", decimals: 18 },
-                rpcUrls: ["https://rpc.sepolia.org"],
-                blockExplorerUrls: ["https://sepolia.etherscan.io"]
+                chainId: "0x2105",
+                chainName: "Base",
+                nativeCurrency: { name: "ETH", symbol: "ETH", decimals: 18 },
+                rpcUrls: ["https://mainnet.base.org"],
+                blockExplorerUrls: ["https://basescan.org"]
               }],
             });
-            log("Sepolia added.");
+            log("Base added.");
           } else {
             throw err;
           }
         });
-        log("Switched to Sepolia.");
+        log("Switched to Base.");
       };
 
       const requestPermissions = async (prov) => {
@@ -172,7 +172,7 @@
         try {
           const prov = ensureProvider();
           if (!prov) return;
-          await switchToSepolia(prov);
+          await switchToBase(prov);
           const chainId = await prov.request({ method: "eth_chainId" });
           log("Current chainId: " + chainId);
         } catch (e) {
