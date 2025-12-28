@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Sepolia ERC20 Approve PoC (No External JS)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+        margin: 24px;
+        max-width: 720px;
+      }
+      label { display: block; margin: 12px 0 6px; }
+      input { width: 100%; padding: 8px; font-size: 14px; }
+      button { margin-top: 16px; padding: 10px 14px; }
+      pre { background: #f6f8fa; padding: 12px; overflow: auto; }
+      code { background: #f0f0f0; padding: 1px 4px; }
+    </style>
+  </head>
+  <body>
+    <h2>Sepolia ERC20 Approve PoC (No External JS)</h2>
+
+    <label>Token (ERC20) Address</label>
+    <input id="token" placeholder="0x..." />
+
+    <label>Spender Address</label>
+    <input id="spender" placeholder="0x..." />
+
+    <label>Amount (human units)</label>
+    <input id="amount" value="1.0" />
+
+    <button id="connect">Connect Wallet</button>
+    <button id="permissions">Request Permissions</button>
+    <button id="switch">Switch to Sepolia</button>
+    <button id="approve">Approve</button>
+
+    <pre id="log"></pre>
+
+    <script>
+      const logEl = document.getElementById('log');
+      const log = (msg) => (logEl.textContent += msg + '\n');
+
+      let account;
+
+      const getWalletProvider = () => {
+        if (window.rabby) return window.rabby;
+        if (window.ethereum) return window.ethereum;
+        return null;
+      };
+
+      const ensureProvider = () => {
+        const p = getWalletProvider();
+        if (!p) {
+          log("No injected provider found (window.rabby / window.ethereum)." );
+          alert("Wallet provider not found.");
+          return null;
+        }
+        log("Provider found: " + (p.isRabby ? "Rabby" : "ethereum"));
+        return p;
+      };
+
+      const requestWithTimeout = (p, ms, label) => {
+        let t;
+        const timeout = new Promise((_, rej) => {
+          t = setTimeout(() => rej(new Error(label + " timed out")), ms);
+        });
+        return Promise.race([p.finally(() => clearTimeout(t)), timeout]);
+      };
+
+      const switchToSepolia = async (prov) => {
+        log("Switching to Sepolia...");
+        await prov.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0xaa36a7" }],
+        }).catch(async (err) => {
+          if (err.code === 4902) {
+            log("Sepolia not added. Adding chain...");
+            await prov.request({
+              method: "wallet_addEthereumChain",
+              params: [{
+                chainId: "0xaa36a7",
+                chainName: "Sepolia",
+                nativeCurrency: { name: "SepoliaETH", symbol: "ETH", decimals: 18 },
+                rpcUrls: ["https://rpc.sepolia.org"],
+                blockExplorerUrls: ["https://sepolia.etherscan.io"]
+              }],
+            });
+            log("Sepolia added.");
+          } else {
+            throw err;
+          }
+        });
+        log("Switched to Sepolia.");
+      };
+
+      const requestPermissions = async (prov) => {
+        log("Requesting permissions...");
+        const res = await requestWithTimeout(
+          prov.request({ method: "wallet_requestPermissions", params: [{ eth_accounts: {} }] }),
+          15000,
+          "wallet_requestPermissions"
+        );
+        log("Permissions result: " + JSON.stringify(res));
+      };
+
+      const strip0x = (hex) => hex.startsWith('0x') ? hex.slice(2) : hex;
+
+      const leftPad32 = (hex) => {
+        const h = strip0x(hex);
+        return h.padStart(64, '0');
+      };
+
+      const toHex = (n) => {
+        if (typeof n === 'bigint') return '0x' + n.toString(16);
+        return '0x' + BigInt(n).toString(16);
+      };
+
+      const parseUnits = (value, decimals) => {
+        // value as string like "1.23"
+        const [whole, frac = ""] = value.split('.');
+        const fracPadded = (frac + '0'.repeat(decimals)).slice(0, decimals);
+        const raw = BigInt(whole || '0') * (10n ** BigInt(decimals)) + BigInt(fracPadded || '0');
+        return raw;
+      };
+
+      const callDecimals = async (prov, token) => {
+        const data = '0x313ce567'; // decimals()
+        const res = await prov.request({
+          method: 'eth_call',
+          params: [{ to: token, data }, 'latest']
+        });
+        const hex = strip0x(res);
+        return parseInt(hex.slice(-2), 16); // decimals is uint8, last byte ok
+      };
+
+      const buildApproveData = (spender, amountRaw) => {
+        const selector = '095ea7b3'; // approve(address,uint256)
+        const spenderPadded = leftPad32(spender);
+        const amountPadded = leftPad32(toHex(amountRaw));
+        return '0x' + selector + spenderPadded + amountPadded;
+      };
+
+      document.getElementById('connect').onclick = async () => {
+        try {
+          const prov = ensureProvider();
+          if (!prov) return;
+          log("Requesting accounts...");
+          const accounts = await requestWithTimeout(
+            prov.request({ method: "eth_requestAccounts" }),
+            15000,
+            "eth_requestAccounts"
+          );
+          account = accounts[0];
+          const chainId = await prov.request({ method: "eth_chainId" });
+          log("Connected: " + account + " | chainId: " + chainId);
+        } catch (e) {
+          log("Connect error: " + (e?.message || e));
+        }
+      };
+
+      document.getElementById('permissions').onclick = async () => {
+        try {
+          const prov = ensureProvider();
+          if (!prov) return;
+          await requestPermissions(prov);
+        } catch (e) {
+          log("Permissions error: " + (e?.message || e));
+        }
+      };
+
+      document.getElementById('switch').onclick = async () => {
+        try {
+          const prov = ensureProvider();
+          if (!prov) return;
+          await switchToSepolia(prov);
+          const chainId = await prov.request({ method: "eth_chainId" });
+          log("Current chainId: " + chainId);
+        } catch (e) {
+          log("Switch error: " + (e?.message || e));
+        }
+      };
+
+      document.getElementById('approve').onclick = async () => {
+        try {
+          const prov = ensureProvider();
+          if (!prov) return;
+          if (!account) {
+            alert("Connect wallet first");
+            return;
+          }
+          const token = document.getElementById('token').value.trim();
+          const spender = document.getElementById('spender').value.trim();
+          const amountHuman = document.getElementById('amount').value.trim();
+
+          if (!token || !spender || !amountHuman) {
+            alert("Fill token, spender, and amount");
+            return;
+          }
+
+          const chainId = await prov.request({ method: "eth_chainId" });
+          log("Approving on chainId: " + chainId);
+
+          const decimals = await callDecimals(prov, token);
+          const amountRaw = parseUnits(amountHuman, decimals);
+          const data = buildApproveData(spender, amountRaw);
+
+          log(`Approving ${amountHuman} (raw ${amountRaw.toString()}) to ${spender}...`);
+          const txHash = await prov.request({
+            method: 'eth_sendTransaction',
+            params: [{ from: account, to: token, data }]
+          });
+          log("Tx sent: " + txHash);
+        } catch (e) {
+          console.error(e);
+          log("Error: " + (e?.message || e));
+        }
+      };
+
+      const prov = getWalletProvider();
+      if (prov?.on) {
+        prov.on('accountsChanged', (accs) => {
+          account = accs?.[0];
+          log("accountsChanged: " + (account || 'none'));
+        });
+        prov.on('chainChanged', (cid) => {
+          log("chainChanged: " + cid);
+        });
+      }
+    </script>
+  </body>
+</html>
