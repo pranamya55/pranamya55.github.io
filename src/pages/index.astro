@@ -1,0 +1,57 @@
+---
+import { getCollection } from 'astro:content';
+import Base from '../layouts/Base.astro';
+import DisclosureCard from '../components/DisclosureCard.astro';
+import { SEVERITIES } from '../content.config';
+
+const all = (await getCollection('disclosures', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+const counts = SEVERITIES.map((s) => ({
+  severity: s,
+  count: all.filter((e) => e.data.severity === s).length,
+})).filter((c) => c.count > 0);
+
+// Group by year, newest first.
+const byYear = new Map<number, typeof all>();
+for (const entry of all) {
+  const y = entry.data.date.getUTCFullYear();
+  if (!byYear.has(y)) byYear.set(y, []);
+  byYear.get(y)!.push(entry);
+}
+const years = [...byYear.keys()].sort((a, b) => b - a);
+---
+<Base title="Pranamya's Disclosures">
+  <h1 class="page-title">Disclosures</h1>
+  <p class="page-lede">
+    Security research and coordinated vulnerability disclosures. Everything here was
+    reported to the affected party and published after remediation or an agreed
+    disclosure window.
+  </p>
+
+  {counts.length > 0 && (
+    <div class="d-head__badges" style="margin-bottom:2rem">
+      {counts.map(({ severity, count }) => (
+        <span class={`badge badge--${severity}`}>{severity} · {count}</span>
+      ))}
+    </div>
+  )}
+
+  {all.length === 0 ? (
+    <div class="empty">
+      <p style="margin:0">No disclosures published yet.</p>
+    </div>
+  ) : (
+    years.map((year) => (
+      <section>
+        <div class="group-head">
+          <h2>{year}</h2>
+          <span>{byYear.get(year)!.length} {byYear.get(year)!.length === 1 ? 'entry' : 'entries'}</span>
+        </div>
+        <ul class="d-list">
+          {byYear.get(year)!.map((entry) => <DisclosureCard entry={entry} />)}
+        </ul>
+      </section>
+    ))
+  )}
+</Base>

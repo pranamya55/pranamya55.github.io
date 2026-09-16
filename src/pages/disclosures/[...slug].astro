@@ -1,0 +1,65 @@
+---
+import { getCollection, render } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+import Base from '../../layouts/Base.astro';
+import SeverityBadge from '../../components/SeverityBadge.astro';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const entries = await getCollection('disclosures', ({ data }) => !data.draft);
+  return entries.map((entry) => ({ params: { slug: entry.id }, props: { entry } }));
+};
+
+const { entry } = Astro.props;
+const d = entry.data;
+const { Content } = await render(entry);
+
+const fmt = (date: Date) =>
+  date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
+---
+<Base title={d.title} description={d.summary}>
+  <a class="backlink" href="/">&larr; All disclosures</a>
+
+  <header class="d-head">
+    <div class="d-head__badges">
+      <SeverityBadge severity={d.severity} />
+      <span class={`chip${d.status === 'fixed' ? ' chip--ok' : ''}`}>{d.status}</span>
+      {d.cve && <span class="chip">{d.cve}</span>}
+    </div>
+    <h1>{d.title}</h1>
+    <p class="d-head__summary">{d.summary}</p>
+  </header>
+
+  <div class="factsheet">
+    <dl>
+      <dt>Target</dt><dd>{d.target}</dd>
+      <dt>Severity</dt><dd>{d.severity}{d.cvss !== undefined && ` · CVSS ${d.cvss.toFixed(1)}`}</dd>
+      <dt>Status</dt><dd>{d.status}</dd>
+      {d.cve && (<><dt>Identifier</dt><dd>{d.cve}</dd></>)}
+      {d.reportedAt && (<><dt>Reported</dt><dd>{fmt(d.reportedAt)}</dd></>)}
+      {d.fixedAt && (<><dt>Remediated</dt><dd>{fmt(d.fixedAt)}</dd></>)}
+      <dt>Published</dt><dd>{fmt(d.date)}</dd>
+      {d.bounty && (<><dt>Bounty</dt><dd>{d.bounty}</dd></>)}
+    </dl>
+  </div>
+
+  <article class="prose">
+    <Content />
+  </article>
+
+  {d.references.length > 0 && (
+    <section class="prose" style="margin-top:2.5rem">
+      <h2>References</h2>
+      <ul>
+        {d.references.map((r) => (
+          <li><a href={r.url} rel="noopener noreferrer">{r.label}</a></li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  {d.tags.length > 0 && (
+    <div class="tag-row">
+      {d.tags.map((t) => <span class="chip">{t}</span>)}
+    </div>
+  )}
+</Base>

@@ -1,0 +1,58 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = 'Vulnerability disclosures and security research by Pranamya Keshkamat.' } = Astro.props;
+const fullTitle = title === "Pranamya's Disclosures" ? title : `${title} — Pranamya's Disclosures`;
+const canonical = new URL(Astro.url.pathname, Astro.site).href;
+const year = new Date().getFullYear();
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="color-scheme" content="light dark" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary" />
+    <link rel="alternate" type="application/rss+xml" title="Pranamya's Disclosures" href="/rss.xml" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href="/">
+          <span class="brand-mark" aria-hidden="true">{'{}'}</span>
+          Pranamya's Disclosures
+        </a>
+        <nav class="nav" aria-label="Main">
+          <a href="/" aria-current={Astro.url.pathname === '/' ? 'page' : undefined}>Index</a>
+          <a href="/about" aria-current={Astro.url.pathname === '/about' ? 'page' : undefined}>About</a>
+          <a href="/rss.xml">RSS</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <div class="wrap">
+        <slot />
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <span>© {year} Pranamya Keshkamat</span>
+        <span>Coordinated disclosure · <a href="https://github.com/pranamya55">github.com/pranamya55</a></span>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,27 @@
+---
+import SeverityBadge from './SeverityBadge.astro';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props { entry: CollectionEntry<'disclosures'>; }
+const { entry } = Astro.props;
+const d = entry.data;
+const fmt = (date: Date) =>
+  date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
+---
+<li class="d-card">
+  <div class="d-card__top">
+    <SeverityBadge severity={d.severity} />
+    <span class={`chip${d.status === 'fixed' ? ' chip--ok' : ''}`}>{d.status}</span>
+    {d.cve && <span class="chip">{d.cve}</span>}
+    {d.cvss !== undefined && <span class="chip">CVSS {d.cvss.toFixed(1)}</span>}
+  </div>
+  <h3 class="d-card__title">
+    <a href={`/disclosures/${entry.id}/`}>{d.title}</a>
+  </h3>
+  <p class="d-card__summary">{d.summary}</p>
+  <div class="d-card__meta">
+    <span class="d-card__target">{d.target}</span>
+    <span>{fmt(d.date)}</span>
+    {d.bounty && <span>bounty {d.bounty}</span>}
+  </div>
+</li>

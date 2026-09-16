@@ -1,0 +1,5 @@
+---
+interface Props { severity: string; }
+const { severity } = Astro.props;
+---
+<span class={`badge badge--${severity}`}>{severity}</span>
