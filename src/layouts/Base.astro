@@ -4,9 +4,14 @@ import '../styles/global.css';
 interface Props {
   title: string;
   description?: string;
+  noindex?: boolean;
 }
 
-const { title, description = 'Vulnerability disclosures and security research by Pranamya Keshkamat.' } = Astro.props;
+const {
+  title,
+  description = 'Vulnerability disclosures and security research by Pranamya Keshkamat.',
+  noindex = false,
+} = Astro.props;
 const fullTitle = title === "Pranamya's Disclosures" ? title : `${title} — Pranamya's Disclosures`;
 const canonical = new URL(Astro.url.pathname, Astro.site).href;
 const year = new Date().getFullYear();
@@ -19,13 +24,16 @@ const year = new Date().getFullYear();
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex, nofollow, noarchive" />}
     <meta name="color-scheme" content="light dark" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
     <meta name="twitter:card" content="summary" />
-    <link rel="alternate" type="application/rss+xml" title="Pranamya's Disclosures" href="/rss.xml" />
+    {!noindex && (
+      <link rel="alternate" type="application/rss+xml" title="Pranamya's Disclosures" href="/rss.xml" />
+    )}
   </head>
   <body>
     <header class="site-header">

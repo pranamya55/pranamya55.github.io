@@ -16,7 +16,7 @@ const { Content } = await render(entry);
 const fmt = (date: Date) =>
   date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' });
 ---
-<Base title={d.title} description={d.summary}>
+<Base title={d.title} description={d.summary} noindex={d.unlisted}>
   <a class="backlink" href="/">&larr; All disclosures</a>
 
   <header class="d-head">
@@ -24,6 +24,7 @@ const fmt = (date: Date) =>
       <SeverityBadge severity={d.severity} />
       <span class={`chip${d.status === 'fixed' ? ' chip--ok' : ''}`}>{d.status}</span>
       {d.cve && <span class="chip">{d.cve}</span>}
+      {d.unlisted && <span class="chip">unlisted</span>}
     </div>
     <h1>{d.title}</h1>
     <p class="d-head__summary">{d.summary}</p>

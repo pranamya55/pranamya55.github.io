@@ -11,7 +11,24 @@ Vulnerability disclosure site for [pranamya.me](https://pranamya.me), built with
    (`solidity`, `bash`, `js`, `python`, … via Shiki, with light/dark variants).
 3. Commit to `main`. The Actions workflow builds and deploys automatically.
 
-Set `draft: true` to keep an entry out of the build while you draft it.
+### Visibility
+
+| Frontmatter | Index / RSS / sitemap | Direct URL | Use for |
+| --- | --- | --- | --- |
+| *(default)* | Listed | Public | Published disclosures |
+| `unlisted: true` | Hidden | **Still public** | Not advertised, but shareable by link |
+| `draft: true` | Hidden | 404 — never built | Work in progress, embargoed findings |
+
+`unlisted` is obscurity, not access control. The page is served with
+`noindex, nofollow, noarchive` and kept out of every listing, but a 200 is a 200:
+anyone with the URL can read it, and **because this repo is public, the filename —
+and therefore the URL — is visible in `src/content/disclosures/`.** For anything
+that genuinely must not be read yet, use `draft: true` or keep the file out of this
+repo entirely.
+
+Note that `robots.txt` deliberately does *not* `Disallow` unlisted paths: a
+`Disallow` rule would publish the exact path it is meant to hide. Per-page
+`noindex` achieves the same result without advertising anything.
 
 Frontmatter is schema-validated: an invalid `severity`, a malformed date, or a
 non-URL reference **fails the build** rather than shipping a broken page.

@@ -18,6 +18,7 @@ references:               # optional
   - label: "Vendor advisory"
     url: "https://example.com/advisory"
 draft: false              # true hides it from the site entirely
+unlisted: false           # true = reachable by URL, but hidden from index/RSS/sitemap
 ---
 
 ## Summary

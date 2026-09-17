@@ -21,6 +21,9 @@ const disclosures = defineCollection({
     tags: z.array(z.string()).default([]),
     references: z.array(z.object({ label: z.string(), url: z.string().url() })).default([]),
     draft: z.boolean().default(false),
+    // Reachable at its URL, but kept out of the index, RSS and sitemap,
+    // and served with <meta name="robots" content="noindex">.
+    unlisted: z.boolean().default(false),
   }),
 });
 
